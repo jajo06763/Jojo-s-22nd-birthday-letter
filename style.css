@@ -439,3 +439,8 @@ p {
   }
 
 }
+.shape.selected {
+  transform: scale(1.1);
+  outline: 2px solid #d85b7a;
+  border-radius: 10px;
+}

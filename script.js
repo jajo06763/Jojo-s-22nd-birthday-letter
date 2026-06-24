@@ -173,6 +173,7 @@ function zoomIntoEye() {
 ========================= */
 
 let draggedShape = null;
+let selectedShape = null;
 
 document.addEventListener("DOMContentLoaded", () => {
 
@@ -181,31 +182,59 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!dropZone) return;
 
+  // =========================
+  // DESKTOP DRAG (unchanged)
+  // =========================
   shapes.forEach(shape => {
     shape.addEventListener("dragstart", (e) => {
       draggedShape = e.target.dataset.shape;
     });
+
+    // =========================
+    // MOBILE TAP SELECT
+    // =========================
+    shape.addEventListener("click", () => {
+      selectedShape = shape.dataset.shape;
+
+      // small visual feedback
+      shapes.forEach(s => s.classList.remove("selected"));
+      shape.classList.add("selected");
+    });
   });
 
+  // allow drop (desktop)
   dropZone.addEventListener("dragover", (e) => {
     e.preventDefault();
   });
 
+  // desktop drop
   dropZone.addEventListener("drop", (e) => {
     e.preventDefault();
 
     if (draggedShape === "heart") {
       unlockVideoPuzzle();
     } else {
-      dropZone.style.transform = "scale(0.95) rotate(-2deg)";
-      setTimeout(() => {
-        dropZone.style.transform = "scale(1)";
-      }, 200);
+      dropZone.style.transform = "scale(0.95)";
+      setTimeout(() => dropZone.style.transform = "scale(1)", 200);
+    }
+  });
+
+  // =========================
+  // MOBILE TAP DROP
+  // =========================
+  dropZone.addEventListener("click", () => {
+
+    const shapeToCheck = selectedShape || draggedShape;
+
+    if (shapeToCheck === "heart") {
+      unlockVideoPuzzle();
+    } else {
+      dropZone.style.transform = "scale(0.95)";
+      setTimeout(() => dropZone.style.transform = "scale(1)", 200);
     }
   });
 
 });
-
 /* =========================
    UNLOCK VIDEO
 ========================= */
