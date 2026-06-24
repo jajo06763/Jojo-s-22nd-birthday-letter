@@ -13,17 +13,9 @@ function typeWriter(element, text, speed = 20, callback) {
 
   function type() {
     if (i < text.length) {
-
-      // handle line breaks properly
-      if (text[i] === "\n") {
-        element.innerHTML += "<br>";
-      } else {
-        element.innerHTML += text[i];
-      }
-
+      element.innerHTML += text[i] === "\n" ? "<br>" : text[i];
       i++;
       setTimeout(type, speed);
-
     } else {
       if (callback) callback();
     }
@@ -33,7 +25,7 @@ function typeWriter(element, text, speed = 20, callback) {
 }
 
 /* =========================
-   PAGE SYSTEM + TYPING
+   PAGE SYSTEM
 ========================= */
 
 function showPage(index) {
@@ -48,30 +40,24 @@ function showPage(index) {
 
   const paragraphs = Array.from(activePage.querySelectorAll("p"));
 
-  // skip UI / puzzle / special captions
   const filtered = paragraphs.filter(p =>
     !p.closest(".buttons") &&
     p.id !== "videoText" &&
     p.id !== "videoTextFinal"
   );
 
-  // store original text
   filtered.forEach(p => {
-   if (!p.dataset.fulltext) {
- p.dataset.fulltext = p.innerHTML
-  .replace(/<br\s*\/?>/gi, "\n");
+    if (!p.dataset.fulltext) {
+      p.dataset.fulltext = p.innerHTML.replace(/<br\s*\/?>/gi, "\n");
     }
     p.innerHTML = "";
   });
 
-  // TYPE SEQUENTIALLY
   function typeNext(i) {
     if (i >= filtered.length) return;
 
     const el = filtered[i];
-    const text = el.dataset.fulltext;
-
-    typeWriter(el, text, 18, () => {
+    typeWriter(el, el.dataset.fulltext, 18, () => {
       setTimeout(() => typeNext(i + 1), 250);
     });
   }
@@ -98,7 +84,7 @@ function prevPage() {
 }
 
 /* =========================
-   EYE TRANSFORMATION
+   EYE ANIMATION (WORKING)
 ========================= */
 
 function transformEye() {
@@ -114,31 +100,24 @@ function transformEye() {
   }, 1200);
 }
 
-function goToVideo() {
-  nextPage();
-}
-
-/* ✨ sparkle effect */
 function spawnSparkles(container) {
   for (let i = 0; i < 18; i++) {
-    const sparkle = document.createElement("div");
-    sparkle.className = "sparkle";
-
-    sparkle.style.left = Math.random() * 180 + "px";
-    sparkle.style.top = Math.random() * 180 + "px";
-
-    container.appendChild(sparkle);
-
-    setTimeout(() => sparkle.remove(), 1200);
+    const s = document.createElement("div");
+    s.className = "sparkle";
+    s.style.left = Math.random() * 180 + "px";
+    s.style.top = Math.random() * 180 + "px";
+    container.appendChild(s);
+    setTimeout(() => s.remove(), 1200);
   }
 }
 
-/* =========================
-   EYE ZOOM
-========================= */
-
 function zoomIntoEye() {
   const zoom = document.getElementById("eyeZoom");
+
+  if (!zoom) return;
+
+  // freeze current page so it doesn't "skip"
+  document.querySelector(".book").style.pointerEvents = "none";
 
   zoom.classList.remove("hidden");
   zoom.classList.add("show");
@@ -150,26 +129,18 @@ function zoomIntoEye() {
 
     setTimeout(() => {
 
+      // re-enable interaction
+      document.querySelector(".book").style.pointerEvents = "auto";
+
       nextPage();
 
-      // reset video puzzle when arriving
-      const video = document.getElementById("videoContainer");
-      const btn = document.getElementById("continueBtn");
-
-      if (video) {
-        video.style.display = "none";
-      }
-
-      if (btn) {
-        btn.style.display = "none";
-      }
-
-    }, 800);
+    }, 700);
 
   }, 1500);
 }
+
 /* =========================
-   PUZZLE SYSTEM (FIXED + MOBILE SAFE)
+   PUZZLE (MOBILE + DESKTOP FIXED)
 ========================= */
 
 let draggedShape = null;
@@ -180,19 +151,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const shapes = document.querySelectorAll(".shape");
   const dropZone = document.getElementById("dropZone");
 
-  if (!dropZone || shapes.length === 0) return;
+  if (!dropZone) return;
 
-  // DRAG (desktop)
   shapes.forEach(shape => {
 
     shape.addEventListener("dragstart", (e) => {
       draggedShape = e.target.dataset.shape;
     });
 
-    // TAP select (mobile)
     shape.addEventListener("click", (e) => {
       e.stopPropagation();
-
       selectedShape = shape.dataset.shape;
 
       shapes.forEach(s => s.classList.remove("selected"));
@@ -201,49 +169,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
   });
 
-  // drag over
-  dropZone.addEventListener("dragover", (e) => {
+  dropZone.addEventListener("dragover", e => e.preventDefault());
+
+  dropZone.addEventListener("drop", e => {
     e.preventDefault();
+    checkPuzzle();
   });
 
-  // drop (desktop)
-  dropZone.addEventListener("drop", (e) => {
-    e.preventDefault();
-
-    if (draggedShape === "heart") {
-      unlockVideoPuzzle();
-    } else {
-      shake(dropZone);
-    }
-  });
-
-  // tap drop (mobile)
   dropZone.addEventListener("click", () => {
-
-    const activeShape = selectedShape || draggedShape;
-
-    if (activeShape === "heart") {
-      unlockVideoPuzzle();
-    } else {
-      shake(dropZone);
-    }
-
+    checkPuzzle();
   });
 
 });
 
-/* small feedback animation */
+function checkPuzzle() {
+  const active = selectedShape || draggedShape;
+
+  if (active === "heart") {
+    unlockVideoPuzzle();
+    if (navigator.vibrate) navigator.vibrate(40);
+  } else {
+    shake(document.getElementById("dropZone"));
+  }
+}
+
 function shake(el) {
   el.style.transform = "scale(0.95) rotate(-2deg)";
   setTimeout(() => {
     el.style.transform = "scale(1)";
   }, 200);
 }
-  });
 
-});
 /* =========================
-   UNLOCK VIDEO
+   VIDEO UNLOCK
 ========================= */
 
 function unlockVideoPuzzle() {
@@ -254,15 +212,8 @@ function unlockVideoPuzzle() {
   const video = document.getElementById("videoContainer");
   const btn = document.getElementById("continueBtn");
 
-  if (!dropZone) return;
-
   dropZone.classList.add("filled");
   dropZone.innerHTML = "💖";
-  dropZone.style.transform = "scale(1.15)";
-
-  setTimeout(() => {
-    dropZone.style.transform = "scale(1)";
-  }, 300);
 
   if (text1) text1.style.display = "none";
   if (text2) text2.style.display = "block";
@@ -281,25 +232,15 @@ function unlockVideoPuzzle() {
 ========================= */
 
 function startConfetti() {
-
   for (let i = 0; i < 80; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
 
-    const piece = document.createElement("div");
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.animationDuration = (Math.random() * 3 + 2) + "s";
 
-    piece.className = "confetti";
+    document.body.appendChild(c);
 
-    piece.style.left = Math.random() * 100 + "vw";
-    piece.style.animationDuration =
-      (Math.random() * 3 + 2) + "s";
-
-    piece.style.transform =
-      "rotate(" + Math.random() * 360 + "deg)";
-
-    document.body.appendChild(piece);
-
-    setTimeout(() => {
-      piece.remove();
-    }, 5000);
-
+    setTimeout(() => c.remove(), 5000);
   }
 }
