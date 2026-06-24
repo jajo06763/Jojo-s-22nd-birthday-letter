@@ -169,7 +169,7 @@ function zoomIntoEye() {
   }, 1500);
 }
 /* =========================
-   PUZZLE SYSTEM (FIXED MOBILE + DESKTOP)
+   PUZZLE SYSTEM (FIXED + MOBILE SAFE)
 ========================= */
 
 let draggedShape = null;
@@ -180,22 +180,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const shapes = document.querySelectorAll(".shape");
   const dropZone = document.getElementById("dropZone");
 
-  if (!dropZone) return;
+  if (!dropZone || shapes.length === 0) return;
 
-  // =========================
-  // DRAG (DESKTOP)
-  // =========================
+  // DRAG (desktop)
   shapes.forEach(shape => {
 
     shape.addEventListener("dragstart", (e) => {
       draggedShape = e.target.dataset.shape;
     });
 
-    // =========================
-    // TAP SELECT (MOBILE)
-    // =========================
+    // TAP select (mobile)
     shape.addEventListener("click", (e) => {
-      e.stopPropagation(); // IMPORTANT: prevents dropZone click from firing immediately
+      e.stopPropagation();
 
       selectedShape = shape.dataset.shape;
 
@@ -205,24 +201,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
   });
 
-  // allow drag drop
+  // drag over
   dropZone.addEventListener("dragover", (e) => {
     e.preventDefault();
   });
 
+  // drop (desktop)
   dropZone.addEventListener("drop", (e) => {
     e.preventDefault();
 
     if (draggedShape === "heart") {
       unlockVideoPuzzle();
     } else {
-      shakeDropZone(dropZone);
+      shake(dropZone);
     }
   });
 
-  // =========================
-  // MOBILE TAP DROP
-  // =========================
+  // tap drop (mobile)
   dropZone.addEventListener("click", () => {
 
     const activeShape = selectedShape || draggedShape;
@@ -230,34 +225,20 @@ document.addEventListener("DOMContentLoaded", () => {
     if (activeShape === "heart") {
       unlockVideoPuzzle();
     } else {
-      shakeDropZone(dropZone);
+      shake(dropZone);
     }
 
   });
 
 });
 
-/* small helper for feedback */
-function shakeDropZone(dropZone) {
-  dropZone.style.transform = "scale(0.95) rotate(-2deg)";
+/* small feedback animation */
+function shake(el) {
+  el.style.transform = "scale(0.95) rotate(-2deg)";
   setTimeout(() => {
-    dropZone.style.transform = "scale(1) rotate(0deg)";
+    el.style.transform = "scale(1)";
   }, 200);
 }
-
-  // =========================
-  // MOBILE TAP DROP
-  // =========================
-  dropZone.addEventListener("click", () => {
-
-    const shapeToCheck = selectedShape || draggedShape;
-
-    if (shapeToCheck === "heart") {
-      unlockVideoPuzzle();
-    } else {
-      dropZone.style.transform = "scale(0.95)";
-      setTimeout(() => dropZone.style.transform = "scale(1)", 200);
-    }
   });
 
 });
