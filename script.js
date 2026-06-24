@@ -169,7 +169,7 @@ function zoomIntoEye() {
   }, 1500);
 }
 /* =========================
-   PUZZLE SYSTEM
+   PUZZLE SYSTEM (FIXED MOBILE + DESKTOP)
 ========================= */
 
 let draggedShape = null;
@@ -183,41 +183,67 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!dropZone) return;
 
   // =========================
-  // DESKTOP DRAG (unchanged)
+  // DRAG (DESKTOP)
   // =========================
   shapes.forEach(shape => {
+
     shape.addEventListener("dragstart", (e) => {
       draggedShape = e.target.dataset.shape;
     });
 
     // =========================
-    // MOBILE TAP SELECT
+    // TAP SELECT (MOBILE)
     // =========================
-    shape.addEventListener("click", () => {
+    shape.addEventListener("click", (e) => {
+      e.stopPropagation(); // IMPORTANT: prevents dropZone click from firing immediately
+
       selectedShape = shape.dataset.shape;
 
-      // small visual feedback
       shapes.forEach(s => s.classList.remove("selected"));
       shape.classList.add("selected");
     });
+
   });
 
-  // allow drop (desktop)
+  // allow drag drop
   dropZone.addEventListener("dragover", (e) => {
     e.preventDefault();
   });
 
-  // desktop drop
   dropZone.addEventListener("drop", (e) => {
     e.preventDefault();
 
     if (draggedShape === "heart") {
       unlockVideoPuzzle();
     } else {
-      dropZone.style.transform = "scale(0.95)";
-      setTimeout(() => dropZone.style.transform = "scale(1)", 200);
+      shakeDropZone(dropZone);
     }
   });
+
+  // =========================
+  // MOBILE TAP DROP
+  // =========================
+  dropZone.addEventListener("click", () => {
+
+    const activeShape = selectedShape || draggedShape;
+
+    if (activeShape === "heart") {
+      unlockVideoPuzzle();
+    } else {
+      shakeDropZone(dropZone);
+    }
+
+  });
+
+});
+
+/* small helper for feedback */
+function shakeDropZone(dropZone) {
+  dropZone.style.transform = "scale(0.95) rotate(-2deg)";
+  setTimeout(() => {
+    dropZone.style.transform = "scale(1) rotate(0deg)";
+  }, 200);
+}
 
   // =========================
   // MOBILE TAP DROP
